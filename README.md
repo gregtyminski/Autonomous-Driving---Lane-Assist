@@ -15,42 +15,69 @@ To complete the project, two files will be submitted: a file containing project 
 To meet specifications in the project, take a look at the requirements in the [project rubric](https://review.udacity.com/#!/rubrics/322/view)
 
 
-Creating a Great Writeup
----
-For this project, a great writeup should provide a detailed response to the "Reflection" section of the [project rubric](https://review.udacity.com/#!/rubrics/322/view). There are three parts to the reflection:
-
-1. Describe the pipeline
-
-2. Identify any shortcomings
-
-3. Suggest possible improvements
-
-We encourage using images in your writeup to demonstrate how your pipeline works.  
-
-All that said, please be concise!  We're not looking for you to write a book here: just a brief description.
-
-You're not required to use markdown for your writeup.  If you use another method please just submit a pdf of your writeup. Here is a link to a [writeup template file](https://github.com/udacity/CarND-LaneLines-P1/blob/master/writeup_template.md). 
-
-
-The Project
+Writeup
 ---
 
-## If you have already installed the [CarND Term1 Starter Kit](https://github.com/udacity/CarND-Term1-Starter-Kit/blob/master/README.md) you should be good to go!   If not, you should install the starter kit to get started on this project. ##
+1. The pipeline
 
-**Step 1:** Set up the [CarND Term1 Starter Kit](https://github.com/udacity/CarND-Term1-Starter-Kit/blob/master/README.md) if you haven't already.
+There are following steps in the pipeline:
+**Step 1** Transform image to grayscale. Keep it grayed.
 
-**Step 2:** Open the code in a Jupyter Notebook
+**Step 2** Blur image, that is already grayed.
+To blur the image, Gaussian blur with kernel size 5x5 px.
 
-You will complete the project code in a Jupyter notebook.  If you are unfamiliar with Jupyter Notebooks, check out [Udacity's free course on Anaconda and Jupyter Notebooks](https://classroom.udacity.com/courses/ud1111) to get started.
+**Step 3** Find all edges with Canny algorithm
+Canny findes edges with the treshold between 50 (low) and 150 (high).
 
-Jupyter is an Ipython notebook where you can run blocks of code and see results interactively.  All the code for this project is contained in a Jupyter notebook. To start Jupyter in your browser, use terminal to navigate to your project directory and then run the following command at the terminal prompt (be sure you've activated your Python 3 carnd-term1 environment as described in the [CarND Term1 Starter Kit](https://github.com/udacity/CarND-Term1-Starter-Kit/blob/master/README.md) installation instructions!):
+**Step 4** Crop region of interest, where there lines may\shall appear
+The region we want to crop is a polygon with following shape:
+     ...........................................
+     .                                         .
+     .                 (0.593)                 .
+     .      (0.47)_________________(0.52)      .
+     .           |                 \           .
+     .          |                   \          .
+     .         |                     \         . 
+     . (0.19) ------------------------- (0.8)  .
+     .                 (0.84)                  .
+     ...........................................
+Where the numbers in bracket is a pixel coefficient vs image width\height
+Just an example from above.
+If image has height of 1000 px, the upper line starts from pixel 593 and the bottom line ends on pixel 840.
+The gap over the region is necessary, because of the it usually contains sky, buildings etc.
+The gap below the region usually contains car's hood.
 
-`> jupyter notebook`
+**Step 5** Apply Hough Line Tranform to find lines on an image
+OpenCV's implementation of Hough Line is used to find lines on an image.
+Params used are:
+rho = 1
+theta = pi/180
+threshold = 1
+min line's length = 5px
+max gap between lines = 1px
+Hough Line transform returns list of lines (it's start and end points).
 
-A browser window will appear showing the contents of the current directory.  Click on the file called "P1.ipynb".  Another browser window will appear displaying the notebook.  Follow the instructions in the notebook to complete the project.  
+**Step 6** Extrapolate the lines and draw them
+To extrapolate the lines first lines are separated to those being part of left line and being part of right line.
+To separate them slope (m) and intercept (b) is calculated.
+For each line, it's x coordinate is compared with "region of interest" upper points' X's and its slope is verified to check, if line part belows to left line or to right line.
+When all lines are separated to "left line" and to "right line", each of them separately is extrapolated.
+To conduct extrapolation OpenCV.fitLine method is used.
+These 2 lines are then drawn from bottom of the screen to the highest points inside "region of interest".
 
-**Step 3:** Complete the project and submit both the Ipython notebook and the project writeup
 
-## How to write a README
-A well written README file can enhance your project and portfolio.  Develop your abilities to create professional README files by completing [this free course](https://www.udacity.com/course/writing-readmes--ud777).
+2. Shortcomings
+There are issues with lines in shadow, which are seen on the video "challenge.mp4".
+Another issue is, that sometimes yellow line is also not ideally seen in grayscale.
+And definitelly the method of defining "region of interest" could be better as well as extrapolating the lines (left & right).
+Sometimes there are little lines next to original lines on the road. They are "found" by Hough Transform and they influence the "extrapolated" line.
+
+
+
+3. Possible improvements
+I think there is an improvement in calculating grayscale necessary. E.g. for each channels separately. I'll try this, however I don't manage it before P1 deadline. ;-)
+I would try to implement more "dynamic" method of finding region of interest. The current one is static and always in the same place.
+I would need to play more with all parameters (for Canny, Hough Tranform, etc.) and find the best ones in "automated way".
+
+
 
