@@ -18,19 +18,20 @@ To meet specifications in the project, take a look at the requirements in the [p
 Writeup
 ---
 
-1. The pipeline
-
+### 1. The pipeline
 There are following steps in the pipeline:
-**Step 1** Transform image to grayscale. Keep it grayed.
-
-**Step 2** Blur image, that is already grayed.
+#### **Step 1**
+Transform image to grayscale. Keep it grayed.
+#### **Step 2**
+Blur image, that is already grayed.
 To blur the image, Gaussian blur with kernel size 5x5 px.
-
-**Step 3** Find all edges with Canny algorithm
+#### **Step 3**
+Find all edges with Canny algorithm
 Canny findes edges with the treshold between 50 (low) and 150 (high).
-
-**Step 4** Crop region of interest, where there lines may\shall appear
+#### **Step 4**
+Crop region of interest, where there lines may\shall appear
 The region we want to crop is a polygon with following shape:
+```
      ...........................................
      .                                         .
      .                 (0.593)                 .
@@ -41,23 +42,24 @@ The region we want to crop is a polygon with following shape:
      . (0.19) ------------------------- (0.8)  .
      .                 (0.84)                  .
      ...........................................
+```
 Where the numbers in bracket is a pixel coefficient vs image width\height
 Just an example from above.
 If image has height of 1000 px, the upper line starts from pixel 593 and the bottom line ends on pixel 840.
 The gap over the region is necessary, because of the it usually contains sky, buildings etc.
 The gap below the region usually contains car's hood.
-
-**Step 5** Apply Hough Line Tranform to find lines on an image
+#### **Step 5**
+Apply Hough Line Tranform to find lines on an image
 OpenCV's implementation of Hough Line is used to find lines on an image.
 Params used are:
-rho = 1
-theta = pi/180
-threshold = 1
-min line's length = 5px
-max gap between lines = 1px
+*rho* = 1
+*theta* = pi/180
+*threshold* = 1
+*min line's length* = 5px
+*max gap between lines* = 1px
 Hough Line transform returns list of lines (it's start and end points).
-
-**Step 6** Extrapolate the lines and draw them
+#### **Step 6**
+Extrapolate the lines and draw them
 To extrapolate the lines first lines are separated to those being part of left line and being part of right line.
 To separate them slope (m) and intercept (b) is calculated.
 For each line, it's x coordinate is compared with "region of interest" upper points' X's and its slope is verified to check, if line part belows to left line or to right line.
@@ -65,16 +67,14 @@ When all lines are separated to "left line" and to "right line", each of them se
 To conduct extrapolation OpenCV.fitLine method is used.
 These 2 lines are then drawn from bottom of the screen to the highest points inside "region of interest".
 
-
-2. Shortcomings
+### 2. Shortcomings
 There are issues with lines in shadow, which are seen on the video "challenge.mp4".
 Another issue is, that sometimes yellow line is also not ideally seen in grayscale.
 And definitelly the method of defining "region of interest" could be better as well as extrapolating the lines (left & right).
 Sometimes there are little lines next to original lines on the road. They are "found" by Hough Transform and they influence the "extrapolated" line.
 
 
-
-3. Possible improvements
+### 3. Possible improvements
 I think there is an improvement in calculating grayscale necessary. E.g. for each channels separately. I'll try this, however I don't manage it before P1 deadline. ;-)
 I would try to implement more "dynamic" method of finding region of interest. The current one is static and always in the same place.
 I would need to play more with all parameters (for Canny, Hough Tranform, etc.) and find the best ones in "automated way".
